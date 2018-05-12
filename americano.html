@@ -1,0 +1,55 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Juego Americano</title>
+
+<link rel="stylesheet" href="libs/jquery-ui-1.10.3.custom/css/ui-lightness/jquery-ui-1.10.3.custom.css" />
+
+<script src="libs/jquery-1.9.1/jquery-1.9.1.js"></script>
+<script src="libs/jquery-ui-1.10.3.custom/js/jquery-ui-1.10.3.custom.js"></script>
+
+<script src="libs/three.js/three.js"></script>
+<script src="libs/three.js/controls/OrbitControls.js"></script>
+<script src="libs/three.js/loaders/OBJLoader.js"></script>
+<script src="libs/three.js/loaders/MTLLoader.js"></script>
+<script src="libs/requestAnimationFrame/RequestAnimationFrame.js"></script>
+<script src="libs/colorpicker/js/colorpicker.js"></script>
+
+<script src="americano.js"></script>
+<script src="ui.js"></script>
+
+<script type="text/javascript">
+
+	$(document).ready(
+			function() {
+
+				var canvas = document.getElementById("webglcanvas");
+
+				// create the scene
+				createScene(canvas);
+
+				// initialize the controls
+				initControls();
+
+		        // Run the run loop
+		        run();
+			}
+	);
+
+</script>
+
+</head>
+<body>
+
+<div id="container">
+  <canvas id="webglcanvas" width=800 height=600></canvas>
+	<div id="title">
+		Three.js Shadows
+	</div>
+	<div id="prompt">
+		Drag the mouse to rotate the camera<br>Use the scroll wheel to zoom.
+	</div>
+</div>
+
+
+</html>
