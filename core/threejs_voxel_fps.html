@@ -203,22 +203,20 @@
             init();
             animate();
 
-            function start() {
+            function start() {      //start the measurement of time
                 startTime = new Date();
             };
 
-            function end() {
+            function end() {    //measure the diff between the start time to now
                 endTime = new Date();
                 timeDiff = endTime - startTime; //in ms
                 // strip the ms
                 timeDiff /= 1000;
 
-                // get seconds 
-                //var seconds = Math.round(timeDiff);
                 console.log(timeDiff + " seconds");
             }
 
-            function initCannon(){
+            function initCannon(){      //setup the base of the stage
                 // Setup our world
                 world = new CANNON.World();
                 world.quatNormalizeSkip = 0;
@@ -276,7 +274,7 @@
                 world.addBody(groundBody);
             }
 
-            function init() {
+            function init() {       //setup the materials and the cameras
 
                 camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 
@@ -340,14 +338,14 @@
                 effect.setSize(window.innerWidth, window.innerHeight);
             }
 
-            function throwBall(){
+            function throwBall(){       //throw the ball when the function is called
                 if(controls.enabled==true){
                     var x = sphereBody.position.x;
                     var y = sphereBody.position.y;
                     var z = sphereBody.position.z;
                     var ballBody = new CANNON.Body({ mass: 1 });
                     ballBody.addShape(ballShape);
-                    var ballMesh = new THREE.Mesh( ballGeometry, material );
+                    var ballMesh = new THREE.Mesh( ballGeometry, material ); //here is created the ball, just need to change ballGeometry and material
                     world.addBody(ballBody);
                     scene.add(ballMesh);
                     ballMesh.castShadow = true;
@@ -392,7 +390,7 @@
             var shootDirection = new THREE.Vector3();
             var shootVelo = 15;
             var projector = new THREE.Projector();
-            function getShootDir(targetVec){
+            function getShootDir(targetVec){        //set the direction when the ball is thrown
                 var vector = targetVec;
                 targetVec.set(0,0,1);
                 projector.unprojectVector(vector, camera);
@@ -402,7 +400,7 @@
                 targetVec.z = ray.direction.z;
             }
 
-            window.addEventListener("click",function(e){
+            window.addEventListener("click",function(e){    //determine when the ball is prepared and thrown
                 if(newGame){
                     newGame = false;
                 }
@@ -422,7 +420,7 @@
                 }
             });
 
-            function frame() {
+            function frame() {      //update the force bar
                 if (width >= 100 || counter == 0) {
                     clearInterval(id);
                 } else {
