@@ -1,40 +1,34 @@
-// 1. Enable shadow mapping in the renderer.
-// 2. Enable shadows and set shadow parameters for the lights that cast shadows.
-// Both the THREE.DirectionalLight type and the THREE.SpotLight type support shadows.
-// 3. Indicate which geometry objects cast and receive shadows.
+var pathfinder = new THREE.Pathfinding();
 
-var renderer = null,
-scene = null,
-var camera = null,
-root = null,
-stadium = null,
-navmesh = null,
-group = null,
-orbitControls = null;
+var container;
 
-var objLoader = null;
+var camera, scene, renderer, controls;
 
-var duration = 20000; // ms
-var currentTime = Date.now();
+var raycaster, intersectedObject;
 
-var playerNavMeshGroup;
+var mouse = new THREE.Vector2();
+
+var startTime	= Date.now();
+
+var windowHalfX = window.innerWidth / 2;
+var windowHalfY = window.innerHeight / 2;
+
+var lastFrameTime = 0;
+var maxFrameTime = 0.03;
+var elapsedTime = 0;
+
+var level;
+
+init();
+animate();
 
 var player, target;
 
-//const Pathfinder = require('three-pathfinding');
-const pathfinder = new THREE.Pathfinding();
+var playerNavMeshGroup;
 
-function run() {
-    requestAnimationFrame(function() { run(); });
+var calculatedPath = null;
 
-        // Render the scene
-        renderer.render( scene, camera );
-
-        // Spin the cube for next frame
-
-        // Update the camera controller
-        orbitControls.update();
-}
+var pathLines;
 
 var onProgress = function ( xhr ) {
   if ( xhr.lengthComputable ) {
@@ -45,142 +39,142 @@ var onProgress = function ( xhr ) {
 
 var onError = function ( xhr ) { };
 
-var directionalLight = null;
-var spotLight = null;
-var ambientLight = null;
-var mapUrl = "../images/checker_large.gif";
+function init() {
 
-var SHADOW_MAP_WIDTH = 2048, SHADOW_MAP_HEIGHT = 2048;
+  container = document.createElement( 'div' );
+  document.body.appendChild( container );
 
-function createScene(canvas) {
+  camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
+  camera.position.x = -10;
+  camera.position.y = 14;
+  camera.position.z = 10;
 
-    // Create the Three.js renderer and attach it to our canvas
-    renderer = new THREE.WebGLRenderer( { canvas: canvas, antialias: true } );
+  scene = new THREE.Scene();
 
-    renderer.setPixelRatio( window.devicePixelRatio );
-    renderer.setSize( window.innerWidth, window.innerHeight );
+  var ambient = new THREE.AmbientLight( 0x101030 );
+  scene.add( ambient );
 
-    window.addEventListener( 'resize', onWindowResize, false );
+  var directionalLight = new THREE.DirectionalLight( 0xffeedd );
+  directionalLight.position.set( 0, 0.5, 0.5 );
+  scene.add( directionalLight );
 
-    camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1000 );
+  var mtlLoader = new THREE.MTLLoader();
+  //mtlLoader.setTexturePath( '70545_Soccer_Stadium_Large/' );
+  //mtlLoader.setPath( '70545_Soccer_Stadium_Large/' );
+  var url = "models/70545_Soccer_Stadium_Large/arena4.mtl";
+  mtlLoader.load( url, function( materials ) {
 
-    // Set the viewport size
-    //renderer.setSize(canvas.width, canvas.height);
+      materials.preload();
 
-    // Turn on shadows
-    //renderer.shadowMap.enabled = true;
-    // Options are THREE.BasicShadowMap, THREE.PCFShadowMap, PCFSoftShadowMap
-    //renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      if ( materials.lights ) {
+        uniforms.ambientLightColor.value = _lights.ambient; // this line breaksPa
+      }
 
-    // Create a new Three.js scene
-    scene = new THREE.Scene();
+      var objLoader = new THREE.OBJLoader();
+      objLoader.setMaterials( materials );
+      //objLoader.setPath( '70545_Soccer_Stadium_Large/' );
+      objLoader.load( 'models/70545_Soccer_Stadium_Large/arena4.obj', function ( stadium ) {
 
-    // Add  a camera so we can view the scene
-    camera = new THREE.PerspectiveCamera( 45, canvas.width / canvas.height, 1, 4000 );
-    camera.position.set(-2, 6, 12);
-    scene.add(camera);
+          stadium.position.y = 0;
+          stadium.position.x = 0;
+          // stadium.position.z = -200;
+          // stadium.scale.x = 0.05;
+          // stadium.scale.y = 0.05;
+          // stadium.scale.z = 0.05;
 
-    // Create a group to hold all the objects
-    root = new THREE.Object3D;
+          scene.add( stadium );
 
-    ambientLight = new THREE.AmbientLight ( 0xffffff );
-    scene.add(ambientLight);
+      }, onProgress, onError );
 
-    var mtlLoader = new THREE.MTLLoader();
-    //mtlLoader.setTexturePath( '70545_Soccer_Stadium_Large/' );
-    //mtlLoader.setPath( '70545_Soccer_Stadium_Large/' );
-    var url = "models/70545_Soccer_Stadium_Large/arena4.mtl";
-    mtlLoader.load( url, function( materials ) {
+  });
 
-        materials.preload();
+  url = "models/70545_Soccer_Stadium_Large/arena_nav.mtl";
+  mtlLoader.load( url, function( materials ) {
 
-        if ( materials.lights ) {
-          uniforms.ambientLightColor.value = _lights.ambient; // this line breaksPa
-		    }
+      materials.preload();
 
-        var objLoader = new THREE.OBJLoader();
-        objLoader.setMaterials( materials );
-        //objLoader.setPath( '70545_Soccer_Stadium_Large/' );
-        objLoader.load( 'models/70545_Soccer_Stadium_Large/arena4.obj', function ( stadium ) {
+      if ( materials.lights ) {
+        uniforms.ambientLightColor.value = _lights.ambient; // this line breaksPa
+      }
 
-            stadium.position.y = 0;
-            stadium.position.x = 0;
-            // stadium.position.z = -200;
-            // stadium.scale.x = 0.05;
-            // stadium.scale.y = 0.05;
-            // stadium.scale.z = 0.05;
+      var objLoader = new THREE.OBJLoader();
+      objLoader.setMaterials( materials );
+      //objLoader.setPath( '70545_Soccer_Stadium_Large/' );
+      objLoader.load( 'models/70545_Soccer_Stadium_Large/arena_nav.obj', function ( navmesh ) {
 
-            scene.add( stadium );
+          navmesh.position.y = 0;
+          navmesh.position.x = 0;
+          // navmesh.position.z = -200;
+          // navmesh.scale.x = 0.05;
+          // navmesh.scale.y = 0.05;
+          // navmesh.scale.z = 0.05;
 
-        }, onProgress, onError );
+          const ZONE = 'level';
+          pathfinder.setZoneData(ZONE, THREE.Pathfinding.createZone(navmesh.geometry));
 
-    });
+          playerNavMeshGroup = pathfinder.getGroup('level', player.position);
 
-    url = "models/70545_Soccer_Stadium_Large/arena_nav.mtl";
-    mtlLoader.load( url, function( materials ) {
+          //scene.add( object );
 
-        materials.preload();
+      }, onProgress, onError );
 
-        if ( materials.lights ) {
-          uniforms.ambientLightColor.value = _lights.ambient; // this line breaksPa
-		    }
+  });
 
-        var objLoader = new THREE.OBJLoader();
-        objLoader.setMaterials( materials );
-        //objLoader.setPath( '70545_Soccer_Stadium_Large/' );
-        objLoader.load( 'models/70545_Soccer_Stadium_Large/arena_nav.obj', function ( navmesh ) {
+/*    var jsonLoader = new THREE.JSONLoader();
 
-            navmesh.position.y = 0;
-            navmesh.position.x = 0;
-            // navmesh.position.z = -200;
-            // navmesh.scale.x = 0.05;
-            // navmesh.scale.y = 0.05;
-            // navmesh.scale.z = 0.05;
+      jsonLoader.load( 'libs/three-pathfinding/demo/meshes/level.js', function( geometry, materials ) {
+        level = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial(materials));
+        scene.add(level);
+      }, null);
 
-            const ZONE = 'level';
-            pathfinder.setZoneData(ZONE, THREE.Pathfinding.createZone(navmesh.geometry));
+      jsonLoader.load( 'libs/three-pathfinding/demo/meshes/level.nav.js', function( geometry, materials ) {
 
-            playerNavMeshGroup = pathfinder.getGroup('level', player.position);
+    var zoneNodes = THREE.Pathfinding.createZone(geometry);
 
-            //scene.add( object );
+    pathfinder.setZoneData('level', zoneNodes);
 
-        }, onProgress, onError );
+        var mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
+          color: 0xd79fd4,
+          opacity: 0.5,
+          transparent: true
+        }));
 
-    });
+        scene.add(mesh);
 
-    var geometry = new THREE.SphereGeometry( 0.25, 32, 32 );
-    var material = new THREE.MeshBasicMaterial( {color: 0x00ff00} );
-    player = new THREE.Mesh( geometry, material );
-    scene.add( player );
+        // Set the player's navigation mesh group
+        playerNavMeshGroup = pathfinder.getGroup('level', player.position);
 
-    player.position.set(-3.5, 0.5, 5.5);
+      }, null);*/
 
-    geometry = new THREE.BoxGeometry( 0.3, 0.3, 0.3 );
-    var material = new THREE.MeshBasicMaterial( {color: 0xff0000} );
-    target = new THREE.Mesh( geometry, material );
-    scene.add( target );
+      // Add test sphere
+  var geometry = new THREE.SphereGeometry( 0.25, 32, 32 );
+  var material = new THREE.MeshBasicMaterial( {color: 0x00ff00} );
+  player = new THREE.Mesh( geometry, material );
+  scene.add( player );
 
-    target.position.copy(player.position);
+  player.position.set(-3.5, 0.5, 5.5);
 
-    renderer = new THREE.WebGLRenderer();
-    renderer.setPixelRatio( window.devicePixelRatio );
-    renderer.setSize( window.innerWidth, window.innerHeight );
-    renderer.setClearColor(0xffffff);
-    container.appendChild( renderer.domElement );
+  geometry = new THREE.BoxGeometry( 0.3, 0.3, 0.3 );
+  var material = new THREE.MeshBasicMaterial( {color: 0xff0000} );
+  target = new THREE.Mesh( geometry, material );
+  scene.add( target );
 
-    raycaster = new THREE.Raycaster();
+  target.position.copy(player.position);
 
-    document.addEventListener( 'click', onDocumentMouseClick, false );
-    window.addEventListener( 'resize', onWindowResize, false );
+  renderer = new THREE.WebGLRenderer();
+  renderer.setPixelRatio( window.devicePixelRatio );
+  renderer.setSize( window.innerWidth, window.innerHeight );
+  renderer.setClearColor(0xffffff);
+  container.appendChild( renderer.domElement );
 
-    controls = new THREE.OrbitControls( camera );
-    controls.damping = 0.2;
+  raycaster = new THREE.Raycaster();
 
-    // Create a group to hold the objects
-    /*group = new THREE.Object3D;
-    root.add(group);*/
+  document.addEventListener( 'click', onDocumentMouseClick, false );
+  window.addEventListener( 'resize', onWindowResize, false );
 
-    //scene.add( root );
+  controls = new THREE.OrbitControls( camera );
+  controls.damping = 0.2;
+
 }
 
 function onDocumentMouseClick (event) {
@@ -247,12 +241,13 @@ function onDocumentMouseClick (event) {
 }
 
 function onWindowResize() {
+  windowHalfX = window.innerWidth / 2;
+  windowHalfY = window.innerHeight / 2;
 
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
 
-    renderer.setSize( window.innerWidth, window.innerHeight );
-
+  renderer.setSize( window.innerWidth, window.innerHeight );
 }
 
 function animate() {
