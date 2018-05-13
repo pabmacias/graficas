@@ -81,6 +81,7 @@
         <script src="../build/cannon.js"></script>
         <script src="js/PointerLockControls.js"></script>
         <script src="js/VoxelLandscape.js"></script>
+        <script src="js/third-party/threejs/StereoEffect.js"></script>
 
         <div id="myProgress">
             <div id="myBar"></div>
@@ -90,7 +91,7 @@
             <div id="instructions">
                 <span style="font-size:40px">Click to play</span>
                 <br />
-                (W,A,S,D = Move, SPACE = Jump, MOUSE = Look, CLICK = Shoot)
+                (A,D = Move, MOUSE = Look, CLICK = Shoot)
             </div>
 
         </div>
@@ -111,6 +112,7 @@
             var elem = document.getElementById("myBar"); 
             var width = 1;
             var id; 
+            var effect;
 
             var blocker = document.getElementById( 'blocker' );
             var instructions = document.getElementById( 'instructions' );
@@ -304,7 +306,6 @@
                 scene.add( light );
 
                 controls = new PointerLockControls( camera , sphereBody );
-                console.log(controls);
                 scene.add( controls.getObject() );
 
                 // floor
@@ -325,6 +326,7 @@
                 renderer.shadowMapSoft = true;
                 renderer.setSize( window.innerWidth, window.innerHeight );
                 renderer.setClearColor( scene.fog.color, 1 );sphereBody
+                effect = new THREE.StereoEffect(renderer);
 
                 document.body.appendChild( renderer.domElement );
 
@@ -335,6 +337,7 @@
                 camera.aspect = window.innerWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
                 renderer.setSize( window.innerWidth, window.innerHeight );
+                effect.setSize(window.innerWidth, window.innerHeight);
             }
 
             function throwBall(){
@@ -380,7 +383,7 @@
                 }
 
                 controls.update( Date.now() - time );
-                renderer.render( scene, camera );
+                effect.render( scene, camera );
                 time = Date.now();
             }
 
