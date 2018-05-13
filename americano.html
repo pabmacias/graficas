@@ -13,9 +13,13 @@
 <script src="libs/three.js/loaders/OBJLoader.js"></script>
 <script src="libs/three.js/loaders/MTLLoader.js"></script>
 <script src="libs/requestAnimationFrame/RequestAnimationFrame.js"></script>
+<script src="libs/three-pathfinding/dist/three-pathfinding.min.js"></script>
 <script src="libs/colorpicker/js/colorpicker.js"></script>
+<script src="libs/three.js/controls/PointerLockControls.js"></script>
+<script src="libs/keyframe.js/keyframe.js"></script>
 
-<script src="americano.js"></script>
+
+<script src="americano2.js"></script>
 <script src="ui.js"></script>
 
 <script type="text/javascript">
@@ -41,15 +45,9 @@
 </head>
 <body>
 
-<div id="container">
-  <canvas id="webglcanvas" width=800 height=600></canvas>
-	<div id="title">
-		Three.js Shadows
+	<div id="container">
+		<canvas id="webglcanvas"></canvas>
 	</div>
-	<div id="prompt">
-		Drag the mouse to rotate the camera<br>Use the scroll wheel to zoom.
-	</div>
-</div>
 
 
 </html>
